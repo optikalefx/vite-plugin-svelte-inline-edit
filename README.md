@@ -1,5 +1,8 @@
 # vite-plugin-svelte-inline-edit
 
+[![npm](https://img.shields.io/npm/v/vite-plugin-svelte-inline-edit.svg)](https://www.npmjs.com/package/vite-plugin-svelte-inline-edit)
+[![license](https://img.shields.io/npm/l/vite-plugin-svelte-inline-edit.svg)](./LICENSE)
+
 Edit text in the browser. It gets written back to your `.svelte` source.
 
 No agent, no CMS, no desktop app. The Svelte compiler records where each string
@@ -94,6 +97,9 @@ inlineEdit({
 Stated plainly, because they are real:
 
 - **Svelte 5 only.** It uses the modern AST and `__svelte_meta`.
+- **Developed against Vite 7 and SvelteKit 2.** The peer range allows Vite 5 and
+  6 — the plugin hooks it uses have been stable for far longer than that — but
+  those have not actually been exercised. Reports welcome.
 - **No mdsvex / `.md` support.** Offsets would have to map back through the
   markdown→Svelte conversion, and mdsvex emits no sourcemap. This is harder than
   the `.svelte` case, not easier.
