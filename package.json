@@ -1,0 +1,54 @@
+{
+	"name": "vite-plugin-svelte-inline-edit",
+	"version": "0.1.0",
+	"description": "Edit text in the browser and have it written back to your .svelte source. No agent, no CMS — the compiler records where each string lives and the dev server splices the file.",
+	"type": "module",
+	"license": "MIT",
+	"author": "Sean Clark",
+	"main": "src/index.js",
+	"exports": {
+		".": "./src/index.js"
+	},
+	"files": [
+		"src",
+		"README.md",
+		"LICENSE"
+	],
+	"keywords": [
+		"vite",
+		"vite-plugin",
+		"svelte",
+		"sveltekit",
+		"inline-edit",
+		"visual-editing",
+		"contenteditable",
+		"dx",
+		"devtools"
+	],
+	"scripts": {
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"format": "prettier --write .",
+		"lint": "prettier --check ."
+	},
+	"peerDependencies": {
+		"svelte": "^5.0.0",
+		"vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
+	},
+	"devDependencies": {
+		"prettier": "^3.4.0",
+		"svelte": "^5.45.0",
+		"vitest": "^3.0.0"
+	},
+	"engines": {
+		"node": ">=18"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/optikalefx/vite-plugin-svelte-inline-edit.git"
+	},
+	"bugs": {
+		"url": "https://github.com/optikalefx/vite-plugin-svelte-inline-edit/issues"
+	},
+	"homepage": "https://github.com/optikalefx/vite-plugin-svelte-inline-edit#readme"
+}
