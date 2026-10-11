@@ -16,6 +16,7 @@ import {
 	findEditable,
 	isParseableMarkup,
 	isRichProse,
+	shownText,
 	stripTags
 } from '../src/source.js';
 
@@ -55,6 +56,37 @@ describe('escaping', () => {
 		// `</strong>,` must read as `mm,` — a space here broke every rich
 		// paragraph with punctuation after a tag.
 		expect(collapse(stripTags('at <strong>70mm</strong>, and'))).toBe('at 70mm, and');
+	});
+});
+
+describe('shownText — what the guard compares against textContent', () => {
+	it('decodes named entities outside the plugin’s own list', () => {
+		// `&middot;` used to be refused forever as "source changed underneath".
+		expect(shownText('A board game &middot; Kickstarter coming')).toBe(
+			'A board game · Kickstarter coming'
+		);
+		expect(shownText('&copy; 2026 &harr; &times;')).toBe('© 2026 ↔ ×');
+	});
+
+	it('decodes decimal and hex references', () => {
+		expect(shownText('it&#8217;s &#x2014; done')).toBe('it’s — done');
+	});
+
+	it('decodes inside rich prose and strips tags to nothing', () => {
+		expect(shownText('a &middot; <strong>b&#x2019;s</strong>, c<br>d')).toBe('a · b’s, cd');
+	});
+
+	it('keeps braces literal', () => {
+		expect(shownText('a {b} &#123;c&#125;')).toBe('a {b} {c}');
+	});
+
+	it('round-trips through escape', () => {
+		const s = 'Tom & Jerry <3 {x} · ©';
+		expect(shownText(escape(s))).toBe(s);
+	});
+
+	it('falls back rather than throwing on markup Svelte will not parse', () => {
+		expect(shownText('a < b &amp; c')).toBe('a < b & c');
 	});
 });
 
@@ -160,7 +192,8 @@ describe('findArrayLiteral', () => {
 	const hunt = ['a red fox', 'a black bear', 'a red fox'];
 	const doing = [
 		{ title: 'One', text: 'The water&rsquo;s slope.' },
-		{ title: 'Two', text: 'Second entry.' }
+		{ title: 'Two', text: 'Second entry.' },
+		{ title: 'Three', text: 'Fly &middot; <em>land</em>' }
 	];
 	const dynamic = someFn();
 	const withTpl = [{ text: \`interpolated \${x}\` }];
@@ -180,6 +213,10 @@ describe('findArrayLiteral', () => {
 
 	it('decodes entities in html mode', () => {
 		expect(at('doing:text', 'The water’s slope.', 'html')).toBe("'The water&rsquo;s slope.'");
+	});
+
+	it('decodes any entity, and ignores tags, in html mode', () => {
+		expect(at('doing:text', 'Fly · land', 'html')).toBe("'Fly &middot; <em>land</em>'");
 	});
 
 	it('does NOT decode in text mode — {expr} renders its string verbatim', () => {

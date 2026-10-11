@@ -24,8 +24,9 @@ import { parse } from 'svelte/compiler';
 export const collapse = (s) => s.replace(/\s+/g, ' ').trim();
 
 /**
- * Decode the entities this plugin might have written, so a guard can compare
- * what the browser showed against what the file holds.
+ * Decode the entities this plugin itself writes. Only a fallback for
+ * `shownText` when a slice will not parse — any other entity (`&middot;`,
+ * `&#8217;`, …) passes through untouched, which is why it is not the guard.
  */
 export const decode = (s) =>
 	s
@@ -289,7 +290,7 @@ export function findArrayLiteral(code, filename, setSpec, oldText, mode) {
 		// Entities decode on the way to the DOM for markup and for `{@html}`, but
 		// a plain `{expression}` renders its string verbatim — so decode only in
 		// html mode or the comparison silently fails.
-		const shown = mode === 'html' ? decode(str) : str;
+		const shown = mode === 'html' ? shownText(str) : str;
 		if (collapse(shown) === collapse(oldText))
 			candidates.push({ start: valueNode.start, end: valueNode.end });
 	}
@@ -312,6 +313,43 @@ export function findArrayLiteral(code, filename, setSpec, oldText, mode) {
  * every rich paragraph with punctuation after a tag.
  */
 export const stripTags = (s) => s.replace(/<[^>]*>/g, '');
+
+/**
+ * The text a browser shows for a slice of markup — what `textContent` returns.
+ * This is what every write guard compares against the client's `oldText`.
+ *
+ * Decoding is delegated to Svelte's own parser so it uses the same entity
+ * table the page was rendered with: every named entity, decimal and hex
+ * references, even the legacy `&amp` without a semicolon. A hand-kept list
+ * can never be complete — an earlier version knew a dozen entities, and any
+ * paragraph holding `&middot;` was refused as "changed underneath" forever.
+ *
+ * Braces are escaped before parsing. An editable slice cannot hold a live
+ * `{expression}` (findEditable refuses those), and an `{@html}` string's braces
+ * are literal, so in both cases a brace is just a character.
+ *
+ * Tags contribute nothing, not a space — see `stripTags`. Falls back to the
+ * regex pair for strings Svelte will not parse, e.g. a bare `a < b` in an
+ * `{@html}` string, which a browser tolerates.
+ */
+export function shownText(markup) {
+	let ast;
+	try {
+		const safe = markup.replace(/[{}]/g, (c) => (c === '{' ? '&#123;' : '&#125;'));
+		ast = parse(`<div>${safe}</div>`, { modern: true });
+	} catch {
+		return decode(stripTags(markup));
+	}
+	let out = '';
+	const walk = (nodes) => {
+		for (const n of nodes) {
+			if (n.type === 'Text') out += n.data;
+			else if (n.fragment) walk(n.fragment.nodes);
+		}
+	};
+	walk(ast.fragment.nodes[0].fragment.nodes);
+	return out;
+}
 
 /**
  * Does this markup parse as Svelte? A backstop against writing a file that will

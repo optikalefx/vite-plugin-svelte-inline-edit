@@ -20,13 +20,12 @@ import { fileURLToPath } from 'node:url';
 import {
 	applyMarks,
 	collapse,
-	decode,
 	escape,
 	escapeHtmlOnly,
 	findArrayLiteral,
 	findEditable,
 	isParseableMarkup,
-	stripTags
+	shownText
 } from './source.js';
 
 const CLIENT_ID = 'virtual:svelte-inline-edit/client';
@@ -159,7 +158,7 @@ export function inlineEdit(options = {}) {
 						if (!rangeOk) return send(409, { ok: false, error: 'stale offsets — reload the page' });
 						const raw = source.slice(start, end);
 
-						if (collapse(decode(stripTags(raw))) !== collapse(oldText))
+						if (collapse(shownText(raw)) !== collapse(oldText))
 							return send(409, { ok: false, error: 'source changed underneath — reload the page' });
 
 						// `rich` is markup the client rebuilt from the DOM. Never trust it
@@ -180,7 +179,7 @@ export function inlineEdit(options = {}) {
 						// The text being replaced must still be the text the browser was
 						// showing. Compare collapsed and decoded — neither whitespace nor
 						// entities survive the round trip.
-						if (collapse(decode(raw)) !== collapse(oldText))
+						if (collapse(shownText(raw)) !== collapse(oldText))
 							return send(409, { ok: false, error: 'source changed underneath — reload the page' });
 
 						// Keep the source's own indentation; prettier re-wraps the line.
